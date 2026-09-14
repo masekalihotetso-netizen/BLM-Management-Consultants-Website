@@ -4,7 +4,14 @@
     "runtime": "nodejs20"
   },
   "hosting": {
-    "public": "frontend",
+    "public": "frontend/dist",
+    "cleanUrls": true,
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
     "ignore": [
       "firebase.json",
       "**/.*",

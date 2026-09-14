@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { initializeApp, cert } = require('firebase-admin/app');
+const { getAuth } = require('firebase-admin/auth');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 const app = express();
@@ -27,12 +28,15 @@ initializeApp({
 });
 
 const db = getFirestore();
+const auth = getAuth();
 
 // Allowed website origins.
 const allowedOrigins = [
   'https://blm-management-consultants.web.app',
   'http://localhost:5000',
-  'http://127.0.0.1:5000'
+  'http://127.0.0.1:5000',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173'
 ];
 
 app.use(cors({
@@ -51,6 +55,26 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: '100kb' }));
+
+async function requireAdmin(req, res, next) {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+
+  if (!token) {
+    return res.status(401).json({ message: 'Administrator authentication is required.' });
+  }
+
+  try {
+    const decodedToken = await auth.verifyIdToken(token);
+    if (decodedToken.admin !== true) {
+      return res.status(403).json({ message: 'Administrator access is required.' });
+    }
+    req.user = decodedToken;
+    return next();
+  } catch (error) {
+    return res.status(401).json({ message: 'Your administrator session is invalid or expired.' });
+  }
+}
 
 // Health check for Render.
 app.get('/health', (req, res) => {
@@ -134,7 +158,7 @@ app.post('/api/contact', async (req, res) => {
 
 // Management endpoint.
 // This will be protected before we expose it publicly.
-app.get('/api/enquiries', async (req, res) => {
+app.get('/api/enquiries', requireAdmin, async (req, res) => {
   try {
     const snapshot = await db
       .collection('enquiries')
@@ -158,7 +182,7 @@ app.get('/api/enquiries', async (req, res) => {
 });
 
 // Update enquiry status.
-app.patch('/api/enquiries/:id', async (req, res) => {
+app.patch('/api/enquiries/:id', requireAdmin, async (req, res) => {
   try {
     const allowedStatuses = ['New', 'Contacted', 'Closed'];
     const { status } = req.body || {};

@@ -2,15 +2,33 @@ const express = require('express');
 const cors = require('cors');
 const {onRequest} = require('firebase-functions/v2/https');
 const {getFirestore, FieldValue} = require('firebase-admin/firestore');
+const {getAuth} = require('firebase-admin/auth');
 const {initializeApp} = require('firebase-admin/app');
 
 initializeApp();
 const database = getFirestore();
+const auth = getAuth();
 const app = express();
 const allowedStatuses = ['New', 'Contacted', 'Closed'];
 
 app.use(cors());
 app.use(express.json({limit: '1mb'}));
+
+async function requireAdmin(req, res, next) {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+
+  if (!token) return res.status(401).json({message: 'Administrator authentication is required.'});
+
+  try {
+    const decodedToken = await auth.verifyIdToken(token);
+    if (decodedToken.admin !== true) return res.status(403).json({message: 'Administrator access is required.'});
+    req.user = decodedToken;
+    return next();
+  } catch (error) {
+    return res.status(401).json({message: 'Your administrator session is invalid or expired.'});
+  }
+}
 
 app.get(['/health', '/api/health'], (req, res) => {
   res.json({status: 'ok', service: 'BLM Management Consultants API'});
@@ -39,7 +57,7 @@ app.post(['/contact', '/api/contact'], async (req, res) => {
   }
 });
 
-app.get(['/enquiries', '/api/enquiries'], async (req, res) => {
+app.get(['/enquiries', '/api/enquiries'], requireAdmin, async (req, res) => {
   try {
     const snapshot = await database.collection('enquiries').orderBy('createdAt', 'desc').get();
     res.json(snapshot.docs.map((document) => ({id: document.id, ...document.data()})));
@@ -49,7 +67,7 @@ app.get(['/enquiries', '/api/enquiries'], async (req, res) => {
   }
 });
 
-app.patch(['/enquiries/:id', '/api/enquiries/:id'], async (req, res) => {
+app.patch(['/enquiries/:id', '/api/enquiries/:id'], requireAdmin, async (req, res) => {
   const {status} = req.body || {};
   if (!allowedStatuses.includes(status)) {
     return res.status(400).json({message: 'Status must be New, Contacted or Closed.'});

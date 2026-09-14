@@ -1,12 +1,21 @@
 # BLM Management Consultants Website
 
-A responsive multi-page full-stack website based on the supplied BLM Management Consultants branding and service information.
+A React/Vite frontend with Firebase-backed enquiry management for BLM Management Consultants.
 
-## Pages
-- `/` or `frontend/index.html` — Home
-- `/about.html` — About
-- `/services.html` — Services
-- `/contact.html` — Contact / enquiry form
+## Frontend
+
+```bash
+cd frontend
+npm install
+copy .env.example .env.local
+npm run dev
+```
+
+Fill in the Firebase Web App values in `frontend/.env.local`. Set
+`VITE_API_BASE_URL` to the deployed backend URL when the API is hosted
+separately. The production output is `frontend/dist`.
+
+Routes are `/`, `/about`, `/services`, `/contact` and `/admin`.
 
 The navigation uses separate HTML pages rather than one long scrolling page.
 
@@ -19,8 +28,9 @@ Colors sampled from the supplied visual identity are represented by:
 
 The supplied logo is included at `frontend/assets/blm-logo.jpg`.
 
-## Run with Node.js and SQLite
-Requirements: Node.js 18+ recommended. XAMPP is not required.
+## Backend
+
+Requirements: Node.js 20+. XAMPP is not required.
 
 ```bash
 cd backend
@@ -28,22 +38,44 @@ npm install
 npm start
 ```
 
-Then open:
-
-`http://localhost:5000`
-
-The Express server serves both the frontend and the API. SQLite is created
-automatically at `backend/data/enquiries.sqlite`.
+The backend requires `FIREBASE_SERVICE_ACCOUNT_JSON` and stores enquiries in
+Cloud Firestore.
 
 ### Node API
 - `GET /api/health` — health check
 - `POST /api/contact` — receives contact enquiries
-- `GET /api/enquiries` — returns saved enquiries (starter-project endpoint; protect this before production)
+- `GET /api/enquiries` — returns saved enquiries for Firebase users with the `admin` custom claim
+- `PATCH /api/enquiries/:id` — updates an enquiry status for Firebase users with the `admin` custom claim
+
+## Admin access
+
+1. Enable Email/Password sign-in in Firebase Authentication.
+2. Create the administrator user in Firebase Authentication.
+3. Set the custom claim from the backend folder using the service-account secret:
+
+```powershell
+$env:FIREBASE_SERVICE_ACCOUNT_JSON = Get-Content .\service-account.json -Raw
+node scripts/set-admin.js admin@example.com
+```
+
+The service-account file must stay server-side and must never be placed in
+`frontend` or exposed as a `VITE_` variable. Users without the `admin` claim
+are signed out of `/admin`, and the backend independently rejects their API
+requests with `403`.
+
+## Firebase deployment
+
+```bash
+firebase deploy --only hosting,functions,firestore
+```
+
+Hosting serves `frontend/dist`, and its SPA rewrite keeps React routes
+working on refresh. Build the frontend before deploying.
 
 ## Production checklist
 Before public deployment:
 - Store the SQLite file on persistent hosting storage, or migrate to a hosted database as traffic grows.
-- Protect the enquiries endpoint with authentication/authorization.
+- Keep the Firebase service-account JSON in the backend hosting provider's secret store.
 - Add rate limiting, validation and spam protection.
 - Enable HTTPS.
 - Add the company's official email/social URLs if provided.

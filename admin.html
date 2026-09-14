@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>BLM Management Consultants | Admin</title>
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <header class="admin-header">
+    <a class="admin-brand" href="/"><strong>BLM</strong><span>Management Consultants</span></a>
+    <a class="back-link" href="/">View website</a>
+  </header>
+
+  <main class="admin-main">
+    <section class="admin-intro">
+      <div>
+        <p class="eyebrow">PRIVATE WORKSPACE</p>
+        <h1>Enquiries dashboard</h1>
+        <p>Review incoming business enquiries and keep their follow-up status current.</p>
+      </div>
+      <button class="refresh-button" id="refreshButton" type="button">Refresh enquiries</button>
+    </section>
+
+    <section class="summary-grid" aria-label="Enquiry summary">
+      <article class="summary-card"><span>Total enquiries</span><strong id="totalCount">0</strong></article>
+      <article class="summary-card"><span>New</span><strong id="newCount">0</strong></article>
+      <article class="summary-card"><span>Contacted</span><strong id="contactedCount">0</strong></article>
+      <article class="summary-card"><span>Closed</span><strong id="closedCount">0</strong></article>
+    </section>
+
+    <section class="enquiries-panel">
+      <div class="panel-toolbar">
+        <div><h2>All enquiries</h2><p id="lastUpdated">Loading...</p></div>
+        <label class="search-field"> <span class="sr-only">Search enquiries</span><input id="searchInput" type="search" placeholder="Search name, phone or service"></label>
+      </div>
+      <p class="admin-error" id="adminError" role="alert"></p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Phone</th><th>Service</th><th>Message</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="enquiriesBody"></tbody>
+        </table>
+        <p class="empty-state" id="emptyState" hidden>No enquiries match your search.</p>
+      </div>
+    </section>
+  </main>
+  <script src="js/admin.js"></script>
+</body>
+</html>

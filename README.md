@@ -72,6 +72,23 @@ firebase deploy --only hosting,functions,firestore
 Hosting serves `frontend/dist`, and its SPA rewrite keeps React routes
 working on refresh. Build the frontend before deploying.
 
+## Render deployment
+
+The repository includes `render.yaml` for a single Render web service. It builds
+the React frontend, starts the Express API, serves the built frontend, and saves
+enquiries to Firestore through the Firebase Admin SDK.
+
+1. Push this repository to GitHub or GitLab.
+2. In Render, choose **New > Blueprint** and select the repository.
+3. Set `FIREBASE_SERVICE_ACCOUNT_JSON` to the complete Firebase service-account
+	JSON as a secret environment variable.
+4. Deploy. Render will provide the public website URL and `/health` will be the
+	service health check.
+
+The frontend and API share the same Render URL, so no `VITE_API_BASE_URL` value
+is required for production. Enable Firebase Authentication Email/Password and
+create an administrator account before using `/admin`.
+
 ## Production checklist
 Before public deployment:
 - Store the SQLite file on persistent hosting storage, or migrate to a hosted database as traffic grows.

@@ -36,16 +36,25 @@ app.get(['/health', '/api/health'], (req, res) => {
 
 app.post(['/contact', '/api/contact'], async (req, res) => {
   const {name, phone, service, message} = req.body || {};
-  if (!name || !phone || !service || !message) {
+  const cleanName = String(name || '').trim();
+  const cleanPhone = String(phone || '').trim();
+  const cleanService = String(service || '').trim();
+  const cleanMessage = String(message || '').trim();
+
+  if (!cleanName || !cleanPhone || !cleanService || !cleanMessage) {
     return res.status(400).json({message: 'Name, phone, service and message are required.'});
+  }
+
+  if (cleanName.length > 100 || cleanPhone.length > 50 || cleanService.length > 150 || cleanMessage.length > 5000) {
+    return res.status(400).json({message: 'One or more enquiry fields are too long.'});
   }
 
   try {
     const enquiry = {
-      name: String(name).trim(),
-      phone: String(phone).trim(),
-      service: String(service).trim(),
-      message: String(message).trim(),
+      name: cleanName,
+      phone: cleanPhone,
+      service: cleanService,
+      message: cleanMessage,
       status: 'New',
       createdAt: FieldValue.serverTimestamp()
     };

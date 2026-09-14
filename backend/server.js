@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
@@ -32,12 +33,14 @@ const auth = getAuth();
 
 // Allowed website origins.
 const allowedOrigins = [
+  process.env.RENDER_EXTERNAL_URL,
+  process.env.APP_URL,
   'https://blm-management-consultants.web.app',
   'http://localhost:5000',
   'http://127.0.0.1:5000',
   'http://localhost:5173',
   'http://127.0.0.1:5173'
-];
+].filter(Boolean);
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -217,6 +220,12 @@ app.patch('/api/enquiries/:id', requireAdmin, async (req, res) => {
       message: 'The enquiry status could not be updated.'
     });
   }
+});
+
+const frontendDirectory = path.join(__dirname, '..', 'frontend', 'dist');
+app.use(express.static(frontendDirectory));
+app.get(/^(?!\/api(?:\/|$)|\/health$).*/, (req, res) => {
+  res.sendFile(path.join(frontendDirectory, 'index.html'));
 });
 
 // Render requires the application to listen on its assigned port.
